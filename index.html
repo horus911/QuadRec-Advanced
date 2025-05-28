@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuadRec Advanced Recorder</title>
+  <link rel="stylesheet" href="style.css" />
+  <script async src="https://static.addtoany.com/menu/page.js"></script>
+</head>
+<body>
+  <header>
+    <img src="assets/images/quadrec_logo.png" alt="QuadRec Logo" class="logo" />
+    <h1>QuadRec Advanced Recorder</h1>
+  </header>
+
+  <section>
+    <h2>Text Recorder</h2>
+    <textarea id="textInput" rows="5" cols="40" placeholder="Write your text here..."></textarea><br />
+    <button id="saveTextBtn">Save Text</button>
+    <div id="savedText" class="content-box"></div>
+    <div id="shareText" class="a2a_kit a2a_kit_size_32 a2a_default_style a2a_vertical_style">
+      <a class="a2a_button_facebook"></a>
+      <a class="a2a_button_twitter"></a>
+      <a class="a2a_button_email"></a>
+      <a class="a2a_button_copy_link"></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Image Upload</h2>
+    <input type="file" id="imageInput" accept="image/*" />
+    <div id="imageContainer" class="content-box"></div>
+    <div id="shareImage" class="a2a_kit a2a_kit_size_32 a2a_default_style a2a_vertical_style">
+      <a class="a2a_button_facebook"></a>
+      <a class="a2a_button_twitter"></a>
+      <a class="a2a_button_email"></a>
+      <a class="a2a_button_copy_link"></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Audio Recorder</h2>
+    <button id="startAudio">Start Recording</button>
+    <button id="stopAudio" disabled>Stop Recording</button>
+    <div id="audioContainer" class="content-box"></div>
+    <div id="shareAudio" class="a2a_kit a2a_kit_size_32 a2a_default_style a2a_vertical_style">
+      <a class="a2a_button_facebook"></a>
+      <a class="a2a_button_twitter"></a>
+      <a class="a2a_button_email"></a>
+      <a class="a2a_button_copy_link"></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Video Recorder</h2>
+    <button id="startVideo">Start Recording</button>
+    <button id="stopVideo" disabled>Stop Recording</button>
+    <video id="preview" width="320" height="240" autoplay muted></video>
+    <div id="videoContainer" class="content-box"></div>
+    <div id="shareVideo" class="a2a_kit a2a_kit_size_32 a2a_default_style a2a_vertical_style">
+      <a class="a2a_button_facebook"></a>
+      <a class="a2a_button_twitter"></a>
+      <a class="a2a_button_email"></a>
+      <a class="a2a_button_copy_link"></a>
+    </div>
+  </section>
+
+<script>
+const saveTextBtn = document.getElementById('saveTextBtn');
+const textInput = document.getElementById('textInput');
+const savedText = document.getElementById('savedText');
+
+saveTextBtn.addEventListener('click', () => {
+  savedText.textContent = textInput.value;
+  a2a.init_all();
+});
+
+const imageInput = document.getElementById('imageInput');
+const imageContainer = document.getElementById('imageContainer');
+
+imageInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = document.createElement('img');
+  img.style.maxWidth = '300px';
+  img.src = URL.createObjectURL(file);
+  imageContainer.innerHTML = '';
+  imageContainer.appendChild(img);
+  a2a.init_all();
+});
+
+let mediaRecorderAudio, audioChunks = [];
+const startAudioBtn = document.getElementById('startAudio');
+const stopAudioBtn = document.getElementById('stopAudio');
+const audioContainer = document.getElementById('audioContainer');
+
+startAudioBtn.onclick = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorderAudio = new MediaRecorder(stream);
+  audioChunks = [];
+  mediaRecorderAudio.ondataavailable = e => audioChunks.push(e.data);
+  mediaRecorderAudio.onstop = () => {
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = audioUrl;
+    audioContainer.innerHTML = '';
+    audioContainer.appendChild(audio);
+    a2a.init_all();
+  };
+  mediaRecorderAudio.start();
+  startAudioBtn.disabled = true;
+  stopAudioBtn.disabled = false;
+};
+
+stopAudioBtn.onclick = () => {
+  mediaRecorderAudio.stop();
+  startAudioBtn.disabled = false;
+  stopAudioBtn.disabled = true;
+};
+
+let mediaRecorderVideo, videoChunks = [];
+const startVideoBtn = document.getElementById('startVideo');
+const stopVideoBtn = document.getElementById('stopVideo');
+const previewVideo = document.getElementById('preview');
+const videoContainer = document.getElementById('videoContainer');
+
+startVideoBtn.onclick = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  previewVideo.srcObject = stream;
+  mediaRecorderVideo = new MediaRecorder(stream);
+  videoChunks = [];
+  mediaRecorderVideo.ondataavailable = e => videoChunks.push(e.data);
+  mediaRecorderVideo.onstop = () => {
+    const videoBlob = new Blob(videoChunks, { type: 'video/webm' });
+    const videoUrl = URL.createObjectURL(videoBlob);
+    const video = document.createElement('video');
+    video.controls = true;
+    video.src = videoUrl;
+    video.width = 320;
+    video.height = 240;
+    videoContainer.innerHTML = '';
+    videoContainer.appendChild(video);
+    a2a.init_all();
+    stream.getTracks().forEach(track => track.stop());
+    previewVideo.srcObject = null;
+  };
+  mediaRecorderVideo.start();
+  startVideoBtn.disabled = true;
+  stopVideoBtn.disabled = false;
+};
+
+stopVideoBtn.onclick = () => {
+  mediaRecorderVideo.stop();
+  startVideoBtn.disabled = false;
+  stopVideoBtn.disabled = true;
+};
+</script>
+</body>
+</html>
